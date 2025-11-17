@@ -1,7 +1,7 @@
 """API v1 router aggregating all endpoints."""
 from fastapi import APIRouter
 
-from .endpoints import auth, papers, conversations, chat
+from .endpoints import auth, papers, conversations, chat, citations
 
 api_router = APIRouter()
 
@@ -17,5 +17,5 @@ api_router.include_router(conversations.router, prefix="/conversations", tags=["
 # Chat routes
 api_router.include_router(chat.router, prefix="/chat", tags=["chat"])
 
-# Citation routes (to be added in Week 2)
-# api_router.include_router(citations.router, prefix="/citations", tags=["citations"])
+# Citation routes
+api_router.include_router(citations.router, prefix="/citations", tags=["citations"])

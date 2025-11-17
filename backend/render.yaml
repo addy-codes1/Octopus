@@ -1,0 +1,28 @@
+# Render.com deployment configuration
+services:
+  - type: web
+    name: scholarchat-api
+    env: python
+    region: oregon
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: scholarchat-db
+          property: connectionString
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: SECRET_KEY
+        generateValue: true
+      - key: CHROMA_PERSIST_DIRECTORY
+        value: /opt/render/project/src/data/chroma
+      - key: UPLOAD_DIR
+        value: /opt/render/project/src/data/uploads
+
+databases:
+  - name: scholarchat-db
+    databaseName: scholarchat
+    region: oregon
+    plan: free

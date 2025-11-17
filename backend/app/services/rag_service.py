@@ -12,6 +12,7 @@ from typing_extensions import TypedDict
 
 from ..core.config import get_settings
 from .vector_store import VectorStoreService
+from .academic_prompts import detect_academic_intent, get_academic_prompt
 
 settings = get_settings()
 
@@ -223,21 +224,34 @@ Be lenient - partial relevance counts as relevant."""),
 
         context = "\n\n".join(context_parts)
 
-        prompt = ChatPromptTemplate.from_messages([
-            ("system", """You are ScholarChat, an academic research assistant helping with literature reviews.
+        # Detect if this is a specialized academic query
+        intent = detect_academic_intent(state["refined_query"])
+
+        if intent in ["contradiction", "methodology", "gaps", "statistics"]:
+            # Use specialized academic prompt
+            specialized_prompt = get_academic_prompt(intent, context, state["refined_query"])
+
+            prompt = ChatPromptTemplate.from_messages([
+                MessagesPlaceholder(variable_name="chat_history"),
+                ("human", specialized_prompt)
+            ])
+        else:
+            # Use standard prompt
+            prompt = ChatPromptTemplate.from_messages([
+                ("system", """You are ScholarChat, an academic research assistant helping with literature reviews.
 Answer questions based on the provided research paper excerpts.
 Always cite your sources using [1], [2], etc. notation matching the document numbers.
 Be precise and academic in your responses.
 If the information is partial, acknowledge what's known and what's not.
 Format your response clearly with proper paragraphs."""),
-            MessagesPlaceholder(variable_name="chat_history"),
-            ("human", """Context from research papers:
+                MessagesPlaceholder(variable_name="chat_history"),
+                ("human", """Context from research papers:
 {context}
 
 Question: {question}
 
 Provide a well-cited answer:""")
-        ])
+            ])
 
         chain = prompt | self.llm
         response = chain.invoke({
